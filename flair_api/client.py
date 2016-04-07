@@ -83,7 +83,6 @@ class Client(object):
     def get_url(self, url):
         return self.handle_resp(requests.get(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}))
 
-
     def handle_resp(self, resp):
         print(resp.status_code)
         body = resp.json()
