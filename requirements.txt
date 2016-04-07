@@ -1,2 +1,1 @@
 requests==2.9.1
-git+git://github.com/edpaget/marshmallow-jsonapi.git@debug-crap
