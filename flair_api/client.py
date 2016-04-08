@@ -7,6 +7,9 @@ DEFAULT_CLIENT_HEADERS = {
     'Content-Type': 'application/json'
 }
 
+def relationship_data(data):
+    return [m.to_relationship() for m in data] if isinstance(data, list) else data.to_relationship()
+
 class Relationship(object):
     def __init__(self, rel, client, rel_data):
         self.client = client
@@ -18,6 +21,24 @@ class Relationship(object):
     def get(self):
         return self.client.get_url(self.related_href)
 
+    def add(self, data):
+        data = data if isinstance(data, list) else [data]
+        rel_form = relationship_data(data)
+        self.data.append(rel_form)
+        self.client.post_url(self.self_href, dict(data=rel_form))
+
+    def update(self, data):
+        rel_form = relationship_data(data)
+        self.data = rel_form
+        self.client.patch_url(self.self_href, dict(data=rel_form))
+        return self.data
+
+    def delete(self, data):
+        data = data if isinstance(data, list) else [data]
+        rel_form = relationship_data(data)
+        self.data.remove(rel_form)
+        self.client.delete_url(self.self_href, dict(data=rel_form))
+
 class Resource(object):
     def __init__(self, client, id_, type_, attributes, relationships):
         self.client = client
@@ -26,6 +47,9 @@ class Resource(object):
         self.attributes = attributes
         self.relationships = {rel: Relationship(rel, self.client, data) for rel, data in relationships.items()}
         self.deleted = False
+
+    def __eq__(self, other):
+        return self.type_ == other.type_ and self.id_ == other.id_
 
     def to_relationship(self):
         return {"id": self.id_, "type": self.type_}
@@ -48,6 +72,18 @@ class Resource(object):
     def delete(self):
         self.client.delete(self.type_, self.id_)
         self.deleted = True
+
+    def add_rel(self, **kwargs):
+        for rel,val in kwargs.items():
+            self.relationships[rel].add(val)
+
+    def update_rel(self, **kwargs):
+        for rel,val in kwargs.items():
+            self.relationships[rel].update(val)
+
+    def delete_rel(self, **kwargs):
+        for rel,val in kwargs.items():
+            self.relationships[rel].delete(val)
 
 class Client(object):
     def __init__(self, client_id=None, client_secret=None, api_root='https://api-qa.flair.co/'):
@@ -105,7 +141,7 @@ class Client(object):
         )
 
     def to_relationship_dict(self, relationships):
-        return {k: {'data': [m.to_relationship() for m in r] if isinstance(r, list) else r.to_relationship()}
+        return {k: {'data': relationship_data(r)}
                 for k,r in relationships.items()}
 
     def update(self, resource_type, id, attributes, relationships):
@@ -153,11 +189,23 @@ class Client(object):
             )
         )
 
+    def delete_url(self, url, data):
+        return self.handle_resp(requests.delete(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}, json=data))
+
+    def patch_url(self, url, data):
+        return self.handle_resp(requests.patch(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}, json=data))
+
+    def post_url(self, url, data):
+        return self.handle_resp(requests.post(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}, json=data))
+
     def get_url(self, url):
         return self.handle_resp(requests.get(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}))
 
     def handle_resp(self, resp):
-        body = resp.json()
+        if not resp.status_code == 204:
+            body = resp.json()
+        else:
+            body = ''
 
         if resp.status_code == 200 and isinstance(body['data'], list):
             return [Resource(self, r['id'], r['type'], r['attributes'], r['relationships']) for r in body['data']]
