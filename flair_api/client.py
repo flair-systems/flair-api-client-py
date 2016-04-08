@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 DEFAULT_CLIENT_HEADERS = {
     'Accept': 'application/vnd.api+json',
-    'Content-Type': 'application/vnd.api+json'
+    'Content-Type': 'application/json'
 }
 
 class Relationship(object):
@@ -25,15 +25,29 @@ class Resource(object):
         self.type_ = type_
         self.attributes = attributes
         self.relationships = {rel: Relationship(rel, self.client, data) for rel, data in relationships.items()}
+        self.deleted = False
 
     def to_relationship(self):
         return {"id": self.id_, "type": self.type_}
 
     def get_self(self):
-        return self.client.get(self.type_, id=self.id_)
+        resp = self.client.get(self.type_, id=self.id_)
+        self.attributes = resp.attributes
+        self.relationships = resp.relationships
+        return self
 
     def get_rel(self, rel):
         return self.relationships[rel].get()
+
+    def update(self, attributes={}, relationships={}):
+        resp = self.client.update(self.type_, self.id_, attributes, relationships)
+        self.attributes = resp.attributes
+        self.relationships = resp.relationships
+        return self
+
+    def delete(self):
+        self.client.delete(self.type_, self.id_)
+        self.deleted = True
 
 class Client(object):
     def __init__(self, client_id=None, client_secret=None, api_root='https://api-qa.flair.co/'):
@@ -73,23 +87,81 @@ class Client(object):
     def token_header(self):
         return {'Authorization': 'Bearer ' + self.token}
 
-    def get(self, resource_type, id=None):
+    def resource_url(self, resource_type, id):
         resource_path = self.api_root_resp[resource_type]['self']
         if id:
             resource_path = resource_path + "/" + str(id)
 
-        return self.handle_resp(requests.get(self.create_url(resource_path), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}))
+        return resource_path
+
+    def get(self, resource_type, id=None):
+        self._fetch_token_if_not()
+        self._fetch_api_root_if_not()
+        return self.handle_resp(
+            requests.get(
+                self.create_url(self.resource_url(resource_type, id)),
+                headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}
+            )
+        )
+
+    def to_relationship_dict(self, relationships):
+        return {k: {'data': [m.to_relationship() for m in r] if isinstance(r, list) else r.to_relationship()}
+                for k,r in relationships.items()}
+
+    def update(self, resource_type, id, attributes, relationships):
+        self._fetch_token_if_not()
+        self._fetch_api_root_if_not()
+        rels = self.to_relationship_dict(relationships)
+        req_body = {'data': {
+            'id': id,
+            'type': resource_type,
+            'attributes': attributes,
+            'relationships': rels
+        }}
+
+        return self.handle_resp(
+            requests.patch(
+                self.create_url(self.resource_url(resource_type, id)),
+                headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS},
+                json=req_body
+            )
+        )
+
+    def delete(self, resource_type, id):
+        self._fetch_token_if_not()
+        self._fetch_api_root_if_not()
+        requests.delete(
+            self.create_url(self.resource_url(resource_type, id)),
+            headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}
+        )
+
+    def create(self, resource_type, attributes={}, relationships={}):
+        self._fetch_token_if_not()
+        self._fetch_api_root_if_not()
+        rels = self.to_relationship_dict(relationships)
+        req_body = {'data': {
+            'type': resource_type,
+            'attributes': attributes,
+            'relationships': rels
+        }}
+
+        return self.handle_resp(
+            requests.post(
+                self.create_url(self.resource_url(resource_type, None)),
+                headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS},
+                json=req_body
+            )
+        )
 
     def get_url(self, url):
         return self.handle_resp(requests.get(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}))
 
     def handle_resp(self, resp):
-        print(resp.status_code)
         body = resp.json()
 
         if resp.status_code == 200 and isinstance(body['data'], list):
             return [Resource(self, r['id'], r['type'], r['attributes'], r['relationships']) for r in body['data']]
-        elif resp.status_code == 200:
+        elif resp.status_code == 200 or resp.status_code == 201:
             return Resource(self, body['data']['id'], body['data']['type'], body['data']['attributes'], body['data']['relationships'] )
         else:
             return body

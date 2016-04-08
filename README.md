@@ -36,7 +36,7 @@ room.delete()
 room.update(attributes={'name': 'Master Bedroom'}, relationships={structure=structures[0], vents=vents})
 
 # create a vent
-vent = Resource.create('vents', attributes={'name': 'North Vent'}, relationships={room=room})
+vent = c.create('vents', attributes={'name': 'North Vent'}, relationships={room=room})
 
 # Add a vent to a room
 room.add_rel(vents=vent)
