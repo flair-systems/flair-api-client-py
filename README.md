@@ -76,10 +76,10 @@ for user in users:
 
 ## Contributing
 
-Contributions are welcome by anyone. You'll just need to sign our [Contributor License Agreement]().
+Contributions are welcome by anyone. To get started, [sign the Contributor License Agreement](https://www.clahub.com/agreements/flair-systems/flair-api-client-py).
 
 ## License
 
 Copyright 2016 by Standard Euler, Inc
 
-Licensed under the [GNU Public License 3.0](http://www.gnu.org/licenses/gpl-3.0.en.html). See LICENSE.
+Licensed under the [Apache Public License 2.0](http://www.apache.org/licenses/LICENSE-2.0). See LICENSE.
