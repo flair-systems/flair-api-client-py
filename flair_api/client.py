@@ -86,10 +86,12 @@ class Resource(object):
             self.relationships[rel].delete(val)
 
 class Client(object):
-    def __init__(self, client_id=None, client_secret=None, api_root='https://api-qa.flair.co/'):
+    def __init__(self, client_id=None, client_secret=None, api_root='https://api-qa.flair.co/', mapper={}, default_model=Resource):
         self.client_id = client_id
         self.client_secret = client_secret
         self.api_root = api_root
+        self.mapper = mapper
+        self.default_model = default_model
 
     def create_url(self, path):
         return urljoin(self.api_root, path)
@@ -201,6 +203,10 @@ class Client(object):
     def get_url(self, url):
         return self.handle_resp(requests.get(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}))
 
+    def create_model(self, id=None, type=None, attributes={}, relationships={}):
+        klass = self.mapper.get(type, self.default_model)
+        return klass(self, id, type, attributes, relationships)
+
     def handle_resp(self, resp):
         if not resp.status_code == 204:
             body = resp.json()
@@ -208,9 +214,9 @@ class Client(object):
             body = ''
 
         if resp.status_code == 200 and isinstance(body['data'], list):
-            return [Resource(self, r['id'], r['type'], r['attributes'], r['relationships']) for r in body['data']]
+            return [self.create_model(**r) for r in body['data']]
         elif resp.status_code == 200 or resp.status_code == 201:
-            return Resource(self, body['data']['id'], body['data']['type'], body['data']['attributes'], body['data']['relationships'] )
+            return self.create_model(**body['data'])
         else:
             return body
 
