@@ -33,10 +33,10 @@ vents = room.get_rel('vents')
 room.delete()
 
 # update a room
-room.update(attributes={'name': 'Master Bedroom'}, relationships={structure=structures[0], vents=vents})
+room.update(attributes={'name': 'Master Bedroom'}, relationships=dict(structure=structures[0], vents=vents))
 
 # create a vent
-vent = c.create('vents', attributes={'name': 'North Vent'}, relationships={room=room})
+vent = c.create('vents', attributes={'name': 'North Vent'}, relationships=dict(room=room))
 
 # Add a vent to a room
 room.add_rel(vents=vent)
