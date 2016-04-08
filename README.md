@@ -8,10 +8,10 @@ This package provides a very simple API client for the [Flair API](https://api.f
 Eventually this will be released on PyPi, for now you'll need to install via github
 
 ```
-pip install git+git://github.com/flair-systems/flair_api_client
+pip install git+git://github.com/flair-systems/flair-api-client-py.git
 ```
 
-This package depdends on [requests](http://docs.python-requests.org/en/master/).
+This package depdends on [requests](http://docs.python-requests.org/en/master/), and requires Python 3.5 or greater.
 
 ## Usage
 
