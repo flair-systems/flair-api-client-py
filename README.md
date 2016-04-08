@@ -1,4 +1,4 @@
-Flair API Client (Python)
+Flair API Client (Python) [![Build Status](https://travis-ci.org/flair-systems/flair-api-client-py.svg?branch=master)](https://travis-ci.org/flair-systems/flair-api-client-py)
 =========
 
 This package provides a very simple API client for the [Flair API](https://api.flair.co/). Since the Flair API uses the [JSON-API](https://jsonapi.org) standard, this client is just a very thin wrapper around a JSON API client, but provides hooks for a extending it with custom models.
