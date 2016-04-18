@@ -177,11 +177,14 @@ class Client(object):
         self._fetch_token_if_not()
         self._fetch_api_root_if_not()
         rels = self.to_relationship_dict(relationships)
-        req_body = {'data': {
-            'type': resource_type,
-            'attributes': attributes,
-            'relationships': rels
-        }}
+        if isinstance(attributes, list):
+            req_body = {'data': [{'type': resource_type, 'relationships': rels, 'attributes': item} for item in attributes]}
+        else:
+            req_body = {'data': {
+                'type': resource_type,
+                'attributes': attributes,
+                'relationships': rels
+            }}
 
         return self.handle_resp(
             requests.post(
