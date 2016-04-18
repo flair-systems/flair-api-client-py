@@ -216,7 +216,7 @@ class Client(object):
         else:
             body = ''
 
-        if resp.status_code == 200 and isinstance(body['data'], list):
+        if (resp.status_code == 200 or resp.status_code == 201) and isinstance(body['data'], list):
             return [self.create_model(**r) for r in body['data']]
         elif resp.status_code == 200 or resp.status_code == 201:
             return self.create_model(**body['data'])
