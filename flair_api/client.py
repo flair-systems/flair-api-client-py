@@ -212,7 +212,10 @@ class Client(object):
 
     def handle_resp(self, resp):
         if not resp.status_code == 204:
-            body = resp.json()
+            if resp:
+                body = resp.json()
+            else:
+                body = ''
         else:
             body = ''
 
