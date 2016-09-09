@@ -50,19 +50,19 @@ def mock_api(api_root, api_token, structure_body):
         })
         m.get('http://example.com/api/', json=api_root)
         m.get('http://example.com/api/structures',
-              headers={**{'Authroization': 'Bearer ' + api_token}, **DEFAULT_CLIENT_HEADERS},
+              headers=dict({'Authroization': 'Bearer ' + api_token}, *DEFAULT_CLIENT_HEADERS),
               json=dict(data=[structure_body]))
         m.post('http://example.com/api/structures',
-              headers={**{'Authroization': 'Bearer ' + api_token}, **DEFAULT_CLIENT_HEADERS},
-              json=dict(data=structure_body))
+               headers=dict({'Authroization': 'Bearer ' + api_token}, *DEFAULT_CLIENT_HEADERS),
+               json=dict(data=structure_body))
         m.get('http://example.com/api/structures/1',
-              headers={**{'Authroization': 'Bearer ' + api_token}, **DEFAULT_CLIENT_HEADERS},
+              headers=dict({'Authroization': 'Bearer ' + api_token}, *DEFAULT_CLIENT_HEADERS),
               json=dict(data=structure_body))
         m.patch('http://example.com/api/structures/1',
-                headers={**{'Authroization': 'Bearer ' + api_token}, **DEFAULT_CLIENT_HEADERS},
+                headers=dict({'Authroization': 'Bearer ' + api_token}, *DEFAULT_CLIENT_HEADERS),
                 json=dict(data={**structure_body, **{'attributes': {'name': 'Better Name'}}}))
         m.delete('http://example.com/api/structures/1',
-                 headers={**{'Authroization': 'Bearer ' + api_token}, **DEFAULT_CLIENT_HEADERS},
+                 headers=dict({'Authroization': 'Bearer ' + api_token}, *DEFAULT_CLIENT_HEADERS),
                  text='', status_code=204)
         yield m
 
