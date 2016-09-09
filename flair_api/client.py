@@ -1,14 +1,19 @@
 import requests
-import copy
-from urllib.parse import urljoin
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    from urlparse import urljoin
 
 DEFAULT_CLIENT_HEADERS = {
     'Accept': 'application/vnd.api+json',
     'Content-Type': 'application/json'
 }
 
+
 def relationship_data(data):
-    return [m.to_relationship() for m in data] if isinstance(data, list) else data.to_relationship()
+    return [m.to_relationship() for m in data] \
+        if isinstance(data, list) else data.to_relationship()
+
 
 class Relationship(object):
     def __init__(self, rel, client, rel_data):
@@ -39,13 +44,15 @@ class Relationship(object):
         self.data.remove(rel_form)
         self.client.delete_url(self.self_href, dict(data=rel_form))
 
+
 class Resource(object):
     def __init__(self, client, id_, type_, attributes, relationships):
         self.client = client
         self.id_ = id_
         self.type_ = type_
         self.attributes = attributes
-        self.relationships = {rel: Relationship(rel, self.client, data) for rel, data in relationships.items()}
+        self.relationships = {rel: Relationship(rel, self.client, data)
+                              for rel, data in relationships.items()}
         self.deleted = False
 
     def __eq__(self, other):
@@ -64,7 +71,9 @@ class Resource(object):
         return self.relationships[rel].get()
 
     def update(self, attributes={}, relationships={}):
-        resp = self.client.update(self.type_, self.id_, attributes, relationships)
+        resp = self.client.update(
+            self.type_, self.id_, attributes, relationships
+        )
         self.attributes = resp.attributes
         self.relationships = resp.relationships
         return self
@@ -74,19 +83,25 @@ class Resource(object):
         self.deleted = True
 
     def add_rel(self, **kwargs):
-        for rel,val in kwargs.items():
+        for rel, val in kwargs.items():
             self.relationships[rel].add(val)
 
     def update_rel(self, **kwargs):
-        for rel,val in kwargs.items():
+        for rel, val in kwargs.items():
             self.relationships[rel].update(val)
 
     def delete_rel(self, **kwargs):
-        for rel,val in kwargs.items():
+        for rel, val in kwargs.items():
             self.relationships[rel].delete(val)
 
+
 class Client(object):
-    def __init__(self, client_id=None, client_secret=None, api_root='https://api-qa.flair.co/', mapper={}, default_model=Resource):
+    def __init__(self,
+                 client_id=None,
+                 client_secret=None,
+                 api_root='https://api-qa.flair.co/',
+                 mapper={},
+                 default_model=Resource):
         self.client_id = client_id
         self.client_secret = client_secret
         self.api_root = api_root
@@ -109,7 +124,9 @@ class Client(object):
         return resp.status_code
 
     def api_root_response(self):
-        resp = requests.get(self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS)
+        resp = requests.get(
+            self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS
+        )
         self.api_root_resp = resp.json().get('links')
 
         return resp.status_code
@@ -138,13 +155,13 @@ class Client(object):
         return self.handle_resp(
             requests.get(
                 self.create_url(self.resource_url(resource_type, id)),
-                headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}
+                headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS)
             )
         )
 
     def to_relationship_dict(self, relationships):
         return {k: {'data': relationship_data(r)}
-                for k,r in relationships.items()}
+                for k, r in relationships.items()}
 
     def update(self, resource_type, id, attributes, relationships):
         self._fetch_token_if_not()
@@ -160,7 +177,7 @@ class Client(object):
         return self.handle_resp(
             requests.patch(
                 self.create_url(self.resource_url(resource_type, id)),
-                headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS},
+                headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
                 json=req_body
             )
         )
@@ -170,7 +187,7 @@ class Client(object):
         self._fetch_api_root_if_not()
         requests.delete(
             self.create_url(self.resource_url(resource_type, id)),
-            headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}
+            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS)
         )
 
     def create(self, resource_type, attributes={}, relationships={}):
@@ -186,24 +203,43 @@ class Client(object):
         return self.handle_resp(
             requests.post(
                 self.create_url(self.resource_url(resource_type, None)),
-                headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS},
+                headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
                 json=req_body
             )
         )
 
     def delete_url(self, url, data):
-        return self.handle_resp(requests.delete(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}, json=data))
+        return self.handle_resp(requests.delete(
+            self.create_url(url),
+            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+            json=data
+        ))
 
     def patch_url(self, url, data):
-        return self.handle_resp(requests.patch(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}, json=data))
+        return self.handle_resp(requests.patch(
+            self.create_url(url),
+            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+            json=data
+        ))
 
     def post_url(self, url, data):
-        return self.handle_resp(requests.post(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}, json=data))
+        return self.handle_resp(requests.post(
+            self.create_url(url),
+            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+            json=data
+        ))
 
     def get_url(self, url):
-        return self.handle_resp(requests.get(self.create_url(url), headers={**self.token_header() , **DEFAULT_CLIENT_HEADERS}))
+        return self.handle_resp(requests.get(
+            self.create_url(url),
+            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS)
+        ))
 
-    def create_model(self, id=None, type=None, attributes={}, relationships={}):
+    def create_model(self,
+                     id=None,
+                     type=None,
+                     attributes={},
+                     relationships={}):
         klass = self.mapper.get(type, self.default_model)
         return klass(self, id, type, attributes, relationships)
 
@@ -219,6 +255,7 @@ class Client(object):
             return self.create_model(**body['data'])
         else:
             return body
+
 
 def make_client(client_id, client_secret, root):
     c = Client(client_id=client_id, client_secret=client_secret, api_root=root)
