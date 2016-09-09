@@ -1,5 +1,6 @@
-from .client import make_client
+from .client import make_client, Resource
 
-__all__ = {
-    'make_client': make_client
-}
+__all__ = [
+    'make_client',
+    'Resource'
+]
