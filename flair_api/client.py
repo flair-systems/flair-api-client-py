@@ -257,8 +257,8 @@ class Client(object):
             return body
 
 
-def make_client(client_id, client_secret, root):
-    c = Client(client_id=client_id, client_secret=client_secret, api_root=root)
+def make_client(client_id, client_secret, root, mapper={}):
+    c = Client(client_id=client_id, client_secret=client_secret, api_root=root, mapper=mapper)
     c.oauth_token()
     c.api_root_response()
     return c
