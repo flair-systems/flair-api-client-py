@@ -155,7 +155,7 @@ class Client(object):
         return self.handle_resp(
             requests.get(
                 self.create_url(self.resource_url(resource_type, id)),
-                headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS)
+                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
             )
         )
 
@@ -177,7 +177,7 @@ class Client(object):
         return self.handle_resp(
             requests.patch(
                 self.create_url(self.resource_url(resource_type, id)),
-                headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
                 json=req_body
             )
         )
@@ -187,7 +187,7 @@ class Client(object):
         self._fetch_api_root_if_not()
         requests.delete(
             self.create_url(self.resource_url(resource_type, id)),
-            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS)
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
         )
 
     def create(self, resource_type, attributes={}, relationships={}):
@@ -203,7 +203,7 @@ class Client(object):
         return self.handle_resp(
             requests.post(
                 self.create_url(self.resource_url(resource_type, None)),
-                headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
                 json=req_body
             )
         )
@@ -211,28 +211,28 @@ class Client(object):
     def delete_url(self, url, data):
         return self.handle_resp(requests.delete(
             self.create_url(url),
-            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
             json=data
         ))
 
     def patch_url(self, url, data):
         return self.handle_resp(requests.patch(
             self.create_url(url),
-            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
             json=data
         ))
 
     def post_url(self, url, data):
         return self.handle_resp(requests.post(
             self.create_url(url),
-            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS),
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
             json=data
         ))
 
     def get_url(self, url):
         return self.handle_resp(requests.get(
             self.create_url(url),
-            headers=dict(self.token_header(), *DEFAULT_CLIENT_HEADERS)
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
         ))
 
     def create_model(self,
