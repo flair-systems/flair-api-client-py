@@ -21,7 +21,7 @@ class ApiError(Exception):
         self.body = resp.text
         try:
             self.json = resp.json()
-        except:
+        except ValueError:
             self.json = None
 
 
@@ -254,7 +254,7 @@ class Client(object):
         return klass(self, id, type, attributes, relationships)
 
     def handle_resp(self, resp):
-        if not resp.status_code == 204:
+        if not resp.status_code == 204 and resp.status_code < 400:
             body = resp.json()
         else:
             body = ''
