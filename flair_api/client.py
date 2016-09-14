@@ -18,7 +18,7 @@ def relationship_data(data):
 class ApiError(Exception):
     def __init__(self, resp):
         self.status_code = resp.status_code
-        self.body = resp.body
+        self.body = resp.data
         try:
             self.json = resp.json()
         except:
