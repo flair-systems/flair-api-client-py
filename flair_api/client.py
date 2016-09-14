@@ -15,6 +15,16 @@ def relationship_data(data):
         if isinstance(data, list) else data.to_relationship()
 
 
+class ApiError(Exception):
+    def __init__(self, resp):
+        self.status_code = resp.status_code
+        self.body = resp.body
+        try:
+            self.json = resp.json()
+        except:
+            self.json = None
+
+
 class Relationship(object):
     def __init__(self, rel, client, rel_data):
         self.client = client
@@ -253,6 +263,8 @@ class Client(object):
             return [self.create_model(**r) for r in body['data']]
         elif resp.status_code == 200 or resp.status_code == 201:
             return self.create_model(**body['data'])
+        elif resp.status_code >= 400:
+            raise ApiError(resp)
         else:
             return body
 
