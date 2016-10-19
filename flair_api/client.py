@@ -33,8 +33,8 @@ class Relationship(object):
         self.related_href = rel_data.get('links', {}).get('related', '')
         self.data = rel_data.get('data', {})
 
-    def get(self):
-        return self.client.get_url(self.related_href)
+    def get(self, **params):
+        return self.client.get_url(self.related_href, **params)
 
     def add(self, data):
         data = data if isinstance(data, list) else [data]
@@ -77,8 +77,8 @@ class Resource(object):
         self.relationships = resp.relationships
         return self
 
-    def get_rel(self, rel):
-        return self.relationships[rel].get()
+    def get_rel(self, rel, **params):
+        return self.relationships[rel].get(**params)
 
     def update(self, attributes={}, relationships={}):
         resp = self.client.update(
@@ -239,9 +239,10 @@ class Client(object):
             json=data
         ))
 
-    def get_url(self, url):
+    def get_url(self, url, **params):
         return self.handle_resp(requests.get(
             self.create_url(url),
+            params=params,
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
         ))
 
