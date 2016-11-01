@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-setup(name='Flair API',
+setup(name='flair-client',
       version='0.0.1',
       description='Flair API Client',
       author='Edward Paget',
