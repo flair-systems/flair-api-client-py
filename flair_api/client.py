@@ -55,6 +55,35 @@ class Relationship(object):
         self.client.delete_url(self.self_href, dict(data=rel_form))
 
 
+class ResourceCollection(object):
+    def __init__(self, client, meta, type_, resources):
+        self.client = client
+        self.type_ = type_
+        self.resources = resources
+        self.meta = meta
+
+    def load_next_page(self):
+        if self.meta.get('next'):
+            col = self.client.get_url(self.meta['next_page'])
+            self.resources = self.resources + col.resources
+            self.meta = col.meta
+
+    def __getitem__(self, idx):
+        return self.resources[idx]
+
+    def __len__(self):
+        return len(self.resources)
+
+    def __iter__(self):
+        for r in self.resources:
+            yield r
+
+    def up_to(self, limit):
+        while len(self.resources) < limit and self.meta.get('next'):
+            self.load_next_page()
+        return self
+
+
 class Resource(object):
     def __init__(self, client, id_, type_, attributes, relationships):
         self.client = client
@@ -261,7 +290,12 @@ class Client(object):
             body = ''
 
         if resp.status_code == 200 and isinstance(body['data'], list):
-            return [self.create_model(**r) for r in body['data']]
+            return ResourceCollection(
+                self,
+                body['meta'],
+                body['data'][0]['type'],
+                [self.create_model(**r) for r in body['data']]
+            )
         elif resp.status_code == 200 or resp.status_code == 201:
             return self.create_model(**body['data'])
         elif resp.status_code >= 400:
