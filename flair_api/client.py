@@ -64,7 +64,7 @@ class ResourceCollection(object):
 
     def load_next_page(self):
         if self.meta.get('next'):
-            col = self.client.get_url(self.meta['next_page'])
+            col = self.client.get_url(self.meta['next'])
             self.resources = self.resources + col.resources
             self.meta = col.meta
 
