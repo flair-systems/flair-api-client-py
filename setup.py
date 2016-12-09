@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='flair-client',
-      version='0.0.2',
+      version='0.0.3',
       description='Flair API Client',
       author='Edward Paget',
       author_email='ed@flair.co',

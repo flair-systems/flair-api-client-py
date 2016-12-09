@@ -229,7 +229,7 @@ class Client(object):
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
         )
 
-    def create(self, resource_type, attributes={}, relationships={}):
+    def create(self, resource_type, attributes={}, relationships={}, params={}):
         self._fetch_token_if_not()
         self._fetch_api_root_if_not()
         rels = self.to_relationship_dict(relationships)
@@ -243,7 +243,8 @@ class Client(object):
             requests.post(
                 self.create_url(self.resource_url(resource_type, None)),
                 headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
-                json=req_body
+                json=req_body,
+                params=params
             )
         )
 
