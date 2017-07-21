@@ -1,6 +1,6 @@
 import requests
 try:
-    from urllib.parse import urljoin
+   from urllib.parse import urljoin
 except ImportError:
     from urlparse import urljoin
 
@@ -79,10 +79,12 @@ class ResourceCollection(object):
             yield r
 
     def all(self):
-        for r in self:
-            if r.id_ == self.resources[-1].id_:
+        idx = 0
+        while self.meta.get('next'):
+            if self[idx] == self.resources[-1]:
                 self.load_next_page()
-            yield r
+            yield self[idx]
+            idx = idx + 1
 
     def up_to(self, limit):
         while len(self.resources) < limit and self.meta.get('next'):
