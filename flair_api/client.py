@@ -78,6 +78,12 @@ class ResourceCollection(object):
         for r in self.resources:
             yield r
 
+    def all(self):
+        for r in self:
+            if r.id == self.resources[-1].id:
+                self.load_next_page()
+            yield r
+
     def up_to(self, limit):
         while len(self.resources) < limit and self.meta.get('next'):
             self.load_next_page()
