@@ -80,7 +80,7 @@ class ResourceCollection(object):
 
     def all(self):
         for r in self:
-            if r.id == self.resources[-1].id:
+            if r.id_ == self.resources[-1].id_:
                 self.load_next_page()
             yield r
 
