@@ -324,7 +324,7 @@ class Client(object):
                 body['data'][0]['type'],
                 [self.create_model(**r) for r in body['data']]
             )
-        elif resp.status_code == 200 or resp.status_code == 201 and \
+        elif (resp.status_code == 200 or resp.status_code == 201) and \
              not body['data']:
             raise EmptyBodyException(resp)
         elif resp.status_code == 200 or resp.status_code == 201:
