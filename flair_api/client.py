@@ -1,6 +1,6 @@
 import requests
 try:
-   from urllib.parse import urljoin
+    from urllib.parse import urljoin
 except ImportError:
     from urlparse import urljoin
 
@@ -15,6 +15,15 @@ def relationship_data(data):
         if isinstance(data, list) else data.to_relationship()
 
 
+class EmptyBodyException(Exception):
+    def __init__(self, resp):
+        self.status_code = resp.status_code
+
+    def __str__(self):
+        return self.__class__.__name__ + "<HTTP Response: " + \
+            str(self.status_code) + ">"
+
+
 class ApiError(Exception):
     def __init__(self, resp):
         self.status_code = resp.status_code
@@ -23,6 +32,10 @@ class ApiError(Exception):
             self.json = resp.json()
         except ValueError:
             self.json = None
+
+    def __str__(self):
+        return self.__class__.__name__ + "<HTTP Response: " + \
+            str(self.status_code) + ">"
 
 
 class Relationship(object):
@@ -148,7 +161,9 @@ class Client(object):
                  client_secret=None,
                  api_root='https://api-qa.flair.co/',
                  mapper={},
+                 admin=False,
                  default_model=Resource):
+        self.admin = admin
         self.client_id = client_id
         self.client_secret = client_secret
         self.api_root = api_root
@@ -187,7 +202,10 @@ class Client(object):
             return self.api_root_response()
 
     def token_header(self):
-        return {'Authorization': 'Bearer ' + self.token}
+        headers = {'Authorization': 'Bearer ' + self.token}
+        if self.admin:
+            headers['x-admin-mode'] = 'admin'
+        return headers
 
     def resource_url(self, resource_type, id):
         resource_path = self.api_root_resp[resource_type]['self']
@@ -298,13 +316,17 @@ class Client(object):
         else:
             body = ''
 
-        if resp.status_code == 200 and isinstance(body['data'], list):
+        if resp.status_code == 200 and isinstance(body['data'], list) and \
+           body['data']:
             return ResourceCollection(
                 self,
                 body['meta'],
                 body['data'][0]['type'],
                 [self.create_model(**r) for r in body['data']]
             )
+        elif resp.status_code == 200 or resp.status_code == 201 and \
+             not body['data']:
+            raise EmptyBodyException(resp)
         elif resp.status_code == 200 or resp.status_code == 201:
             return self.create_model(**body['data'])
         elif resp.status_code >= 400:
@@ -313,8 +335,14 @@ class Client(object):
             return body
 
 
-def make_client(client_id, client_secret, root, mapper={}):
-    c = Client(client_id=client_id, client_secret=client_secret, api_root=root, mapper=mapper)
+def make_client(client_id, client_secret, root, mapper={}, admin=False):
+    c = Client(
+       client_id=client_id,
+       client_secret=client_secret,
+       api_root=root,
+       mapper=mapper,
+       admin=admin
+    )
     c.oauth_token()
     c.api_root_response()
     return c
