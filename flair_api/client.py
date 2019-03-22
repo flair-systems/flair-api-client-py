@@ -6,7 +6,7 @@ except ImportError:
 
 DEFAULT_CLIENT_HEADERS = {
     'Accept': 'application/vnd.api+json',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
 }
 
 
@@ -187,7 +187,7 @@ class Client(object):
 
     def api_root_response(self):
         resp = requests.get(
-            self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS
+            self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS, timeout=5.0
         )
         self.api_root_resp = resp.json().get('links')
 
@@ -220,7 +220,7 @@ class Client(object):
         return self.handle_resp(
             requests.get(
                 self.create_url(self.resource_url(resource_type, id)),
-                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
+                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS), timeout=5.0
             )
         )
 
@@ -299,7 +299,7 @@ class Client(object):
         return self.handle_resp(requests.get(
             self.create_url(url),
             params=params,
-            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS), timeout=5.0
         ))
 
     def create_model(self,
