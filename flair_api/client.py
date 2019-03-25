@@ -6,7 +6,7 @@ except ImportError:
 
 DEFAULT_CLIENT_HEADERS = {
     'Accept': 'application/vnd.api+json',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
 }
 
 
@@ -162,13 +162,15 @@ class Client(object):
                  api_root='https://api-qa.flair.co/',
                  mapper={},
                  admin=False,
-                 default_model=Resource):
+                 default_model=Resource,
+                 timeout=5.0):
         self.admin = admin
         self.client_id = client_id
         self.client_secret = client_secret
         self.api_root = api_root
         self.mapper = mapper
         self.default_model = default_model
+        self.timeout = timeout
 
     def create_url(self, path):
         return urljoin(self.api_root, path)
@@ -187,7 +189,7 @@ class Client(object):
 
     def api_root_response(self):
         resp = requests.get(
-            self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS
+            self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS, timeout=self.timeout
         )
         self.api_root_resp = resp.json().get('links')
 
@@ -220,7 +222,7 @@ class Client(object):
         return self.handle_resp(
             requests.get(
                 self.create_url(self.resource_url(resource_type, id)),
-                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
+                headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS), timeout=self.timeout
             )
         )
 
@@ -299,7 +301,7 @@ class Client(object):
         return self.handle_resp(requests.get(
             self.create_url(url),
             params=params,
-            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
+            headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS), timeout=self.timeout
         ))
 
     def create_model(self,
