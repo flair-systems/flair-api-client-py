@@ -181,7 +181,8 @@ class Client(object):
             client_secret=self.client_secret,
             grant_type="client_credentials"
         ))
-
+        if resp.status_code == 401:
+            raise ApiError(resp)
         self.token = resp.json().get('access_token')
         self.expires_in = resp.json().get('expires_in')
 
