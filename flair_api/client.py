@@ -171,16 +171,20 @@ class Client(object):
         self.mapper = mapper
         self.default_model = default_model
         self.timeout = timeout
+        self.session = requests.Session()
 
     def create_url(self, path):
         return urljoin(self.api_root, path)
 
     def oauth_token(self):
-        resp = requests.post(self.create_url("/oauth/token"), data=dict(
+        resp = self.session.post(self.create_url("/oauth/token"), data=dict(
             client_id=self.client_id,
             client_secret=self.client_secret,
             grant_type="client_credentials"
         ))
+
+        if resp.status_code == 401:
+            raise ApiError(resp)
 
         self.token = resp.json().get('access_token')
         self.expires_in = resp.json().get('expires_in')
@@ -188,7 +192,7 @@ class Client(object):
         return resp.status_code
 
     def api_root_response(self):
-        resp = requests.get(
+        resp = self.session.get(
             self.create_url("/api/"), headers=DEFAULT_CLIENT_HEADERS, timeout=self.timeout
         )
         self.api_root_resp = resp.json().get('links')
@@ -220,7 +224,7 @@ class Client(object):
         self._fetch_token_if_not()
         self._fetch_api_root_if_not()
         return self.handle_resp(
-            requests.get(
+            self.session.get(
                 self.create_url(self.resource_url(resource_type, id)),
                 headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS), timeout=self.timeout
             )
@@ -242,7 +246,7 @@ class Client(object):
         }}
 
         return self.handle_resp(
-            requests.patch(
+            self.session.patch(
                 self.create_url(self.resource_url(resource_type, id)),
                 headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
                 json=req_body
@@ -252,7 +256,7 @@ class Client(object):
     def delete(self, resource_type, id):
         self._fetch_token_if_not()
         self._fetch_api_root_if_not()
-        requests.delete(
+        self.session.delete(
             self.create_url(self.resource_url(resource_type, id)),
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS)
         )
@@ -268,7 +272,7 @@ class Client(object):
         }}
 
         return self.handle_resp(
-            requests.post(
+            self.session.post(
                 self.create_url(self.resource_url(resource_type, None)),
                 headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
                 json=req_body,
@@ -277,28 +281,28 @@ class Client(object):
         )
 
     def delete_url(self, url, data):
-        return self.handle_resp(requests.delete(
+        return self.handle_resp(self.session.delete(
             self.create_url(url),
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
             json=data
         ))
 
     def patch_url(self, url, data):
-        return self.handle_resp(requests.patch(
+        return self.handle_resp(self.session.patch(
             self.create_url(url),
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
             json=data
         ))
 
     def post_url(self, url, data):
-        return self.handle_resp(requests.post(
+        return self.handle_resp(self.session.post(
             self.create_url(url),
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS),
             json=data
         ))
 
     def get_url(self, url, **params):
-        return self.handle_resp(requests.get(
+        return self.handle_resp(self.session.get(
             self.create_url(url),
             params=params,
             headers=dict(self.token_header(), **DEFAULT_CLIENT_HEADERS), timeout=self.timeout
