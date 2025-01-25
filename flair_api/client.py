@@ -163,7 +163,9 @@ class Client(object):
                  mapper={},
                  admin=False,
                  default_model=Resource,
-                 timeout=5.0):
+                 timeout=5.0,
+                 use_oauth_2=False):
+        self.use_oauth_2 = use_oauth_2
         self.admin = admin
         self.client_id = client_id
         self.client_secret = client_secret
@@ -176,7 +178,8 @@ class Client(object):
         return urljoin(self.api_root, path)
 
     def oauth_token(self):
-        resp = requests.post(self.create_url("/oauth/token"), data=dict(
+        oauth_url = "/oauth2/token" if self.use_oauth_2 else "/oauth/token"
+        resp = requests.post(self.create_url(oauth_url), data=dict(
             client_id=self.client_id,
             client_secret=self.client_secret,
             grant_type="client_credentials"
@@ -337,13 +340,14 @@ class Client(object):
             return body
 
 
-def make_client(client_id, client_secret, root, mapper={}, admin=False):
+def make_client(client_id, client_secret, root, mapper={}, admin=False, use_oauth_2=False):
     c = Client(
        client_id=client_id,
        client_secret=client_secret,
        api_root=root,
        mapper=mapper,
-       admin=admin
+       admin=admin,
+       use_oauth_2=use_oauth_2
     )
     c.oauth_token()
     c.api_root_response()
