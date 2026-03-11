@@ -1,6 +1,9 @@
 language: python
 python:
-  - "2.7"
-  - "3.5"
-install: "pip install -r requirements.txt"
-script: "py.test"
+  - "3.8"
+  - "3.9"
+  - "3.10"
+  - "3.11"
+  - "3.12"
+install: "pip install -e ."
+script: "make test"

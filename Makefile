@@ -7,8 +7,18 @@ build:
 	python -m build
 
 # Run tests
-test:
-	python -m pytest test_flair_api.py -v
+test: test-unit
+
+test-unit:
+	python -m pytest test_mock_api.py -v
+
+test-integration:
+	python -m pytest test_real_api.py -v
+
+test-all: test-unit test-integration
+
+test-coverage:
+	python -m pytest test_mock_api.py --cov=flair_api --cov-report=html
 
 # Clean build artifacts
 clean:

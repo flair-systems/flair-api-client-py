@@ -1,9 +1,7 @@
 import requests
 import time
-try:
-    from urllib.parse import urljoin
-except ImportError:
-    from urlparse import urljoin
+import logging
+from urllib.parse import urljoin
 
 DEFAULT_CLIENT_HEADERS = {
     'Accept': 'application/vnd.api+json',
@@ -89,7 +87,7 @@ class ResourceCollection(object):
                 self.resources.extend(col.resources)
                 self.meta = col.meta
             else:
-                print(f"Warning: Expected ResourceCollection from next page, got {type(col)}")
+                logging.warning(f"Expected ResourceCollection from next page, got {type(col)}")
                 self.meta['next'] = None
 
     def __getitem__(self, idx):
@@ -197,7 +195,8 @@ class Client(object):
                  redirect_uri=None,  # For OAuth 2.0 'authorization_code' grant
                  auth_code=None,  # For OAuth 2.0 'authorization_code' grant (initial code)
                  refresh_token_initial=None,  # If starting with a known refresh token
-                 fallback_to_legacy_auth=True  # Allow fallback to OAuth 1.0 on initial auth failure
+                 fallback_to_legacy_auth=True,  # Allow fallback to OAuth 1.0 on initial auth failure
+                 user_agent=None  # Custom user-agent string for the project
                  ):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -205,6 +204,7 @@ class Client(object):
         self.mapper = mapper
         self.admin = admin
         self.default_model = default_model
+        self.user_agent = user_agent
 
         # Authentication details
         self.oauth_version = oauth_version
@@ -276,7 +276,7 @@ class Client(object):
             client_secret=self.client_secret,
             grant_type="client_credentials"
         )
-        print("Attempting Legacy Authentication...")
+        logging.info("Attempting Legacy Authentication...")
         resp = requests.post(token_url, data=payload)
         try:
             resp.raise_for_status()
@@ -291,7 +291,7 @@ class Client(object):
                  self.expires_at = None
             if not self.access_token:
                 raise AuthenticationError(resp)
-            print("Legacy Authentication Successful.")
+            logging.info("Legacy Authentication Successful.")
             return resp.status_code
         except requests.exceptions.RequestException as e:
             new_exc = AuthenticationError(e.response if e.response is not None else resp)
@@ -314,7 +314,7 @@ class Client(object):
         if self.scope:
             payload['scope'] = self.scope
 
-        print(f"Attempting OAuth 2.0 Authentication (grant_type: {current_grant_type})...")
+        logging.info(f"Attempting OAuth 2.0 Authentication (grant_type: {current_grant_type})...")
 
         if current_grant_type == 'client_credentials':
             pass
@@ -337,7 +337,7 @@ class Client(object):
 
         resp = requests.post(token_url, data=payload)
         status_code = self._process_token_response(resp)
-        print(f"OAuth 2.0 Authentication ({current_grant_type}) Successful.")
+        logging.info(f"OAuth 2.0 Authentication ({current_grant_type}) Successful.")
         if current_grant_type == 'authorization_code':
             self.auth_code = None
         return status_code
@@ -352,13 +352,13 @@ class Client(object):
             else:
                 raise ValueError(f"Unsupported oauth_version: {self.oauth_version}")
         except AuthenticationError as e:
-            print(f"Initial authentication failed: {e}")
+            logging.error(f"Initial authentication failed: {e}")
             if self.oauth_version == 2 and self.fallback_to_legacy_auth:
-                print("Attempting fallback to legacy authentication...")
+                logging.info("Attempting fallback to legacy authentication...")
                 try:
                     return self._auth_legacy()
                 except AuthenticationError as fallback_e:
-                    print(f"Legacy fallback authentication also failed: {fallback_e}")
+                    logging.error(f"Legacy fallback authentication also failed: {fallback_e}")
                     raise fallback_e
             else:
                 raise e
@@ -366,14 +366,14 @@ class Client(object):
     def refresh_oauth2_token(self):
         """Refresh the OAuth 2.0 token using the refresh token."""
         if not self.refresh_token:
-            print("No refresh token available. Cannot refresh.")
+            logging.error("No refresh token available. Cannot refresh.")
             raise AuthenticationError("Refresh token missing, cannot refresh.")
 
-        print("Access token expired or nearing expiry. Refreshing...")
+        logging.info("Access token expired or nearing expiry. Refreshing...")
         try:
             return self._auth_oauth2(grant_type_override='refresh_token')
         except AuthenticationError as e:
-            print(f"Failed to refresh token: {e}")
+            logging.error(f"Failed to refresh token: {e}")
             self.access_token = None
             self.refresh_token = None
             self.expires_at = None
@@ -382,18 +382,18 @@ class Client(object):
     def _ensure_valid_token(self):
         """Checks if token exists and is valid, refreshes if needed."""
         if self.access_token is None:
-            print("No access token found. Authenticating...")
+            logging.info("No access token found. Authenticating...")
             self.authenticate()
         elif self.expires_at is not None and time.time() >= self.expires_at:
-            print("Access token expired.")
+            logging.warning("Access token expired.")
             if self.oauth_version == 2 and self.refresh_token:
                 try:
                     self.refresh_oauth2_token()
                 except AuthenticationError:
-                    print("Token refresh failed. Attempting full re-authentication...")
+                    logging.warning("Token refresh failed. Attempting full re-authentication...")
                     self.authenticate()
             else:
-                 print("No refresh mechanism or not OAuth 2.0. Re-authenticating fully...")
+                 logging.warning("No refresh mechanism or not OAuth 2.0. Re-authenticating fully...")
                  self.authenticate()
 
     def token_header(self):
@@ -408,18 +408,19 @@ class Client(object):
     def api_root_response(self):
         """Fetches and caches the API root links."""
         url = self.create_url("/api/")
+        resp = None
         try:
             resp = requests.get(url, headers=DEFAULT_CLIENT_HEADERS)
             resp.raise_for_status()
             self.api_root_resp = resp.json().get('links')
             if not self.api_root_resp:
-                 print(f"Warning: No 'links' found in API root response from {url}")
+                 logging.warning(f"No 'links' found in API root response from {url}")
             return resp.status_code
         except requests.exceptions.RequestException as e:
-             print(f"Error fetching API root {url}: {e}")
+             logging.error(f"Error fetching API root {url}: {e}")
              raise ApiError(e.response if e.response is not None else None) from e
         except ValueError:
-             raise ApiError(resp)
+             raise ApiError(resp if resp is not None else None)
 
     def _fetch_api_root_if_not(self):
         """Ensures API root links are fetched."""
@@ -452,6 +453,8 @@ class Client(object):
 
         request_headers = self.token_header()
         request_headers.update(DEFAULT_CLIENT_HEADERS)
+        if self.user_agent:
+            request_headers['User-Agent'] = self.user_agent
         if headers:
             request_headers.update(headers)
 
@@ -552,13 +555,13 @@ class Client(object):
                 return None
             try:
                 if not resp.content:
-                     print(f"Warning: Received status {status_code} with empty body.")
+                     logging.warning(f"Received status {status_code} with empty body.")
                      return None
 
                 body = resp.json()
 
                 if 'data' not in body:
-                     print(f"Warning: Response body does not contain 'data' key. Body: {body}")
+                     logging.warning(f"Response body does not contain 'data' key. Body: {body}")
                      return body
 
                 if body['data'] is None:
@@ -575,7 +578,7 @@ class Client(object):
                 elif isinstance(response_data, dict):
                     return self.create_model(**response_data)
                 else:
-                     print(f"Warning: Unexpected type for 'data' in response: {type(response_data)}")
+                     logging.warning(f"Unexpected type for 'data' in response: {type(response_data)}")
                      return response_data
 
             except ValueError as e:
@@ -590,18 +593,19 @@ class Client(object):
                 raise ApiError(resp)
 
         else:
-            print(f"Warning: Received unexpected status code {status_code}. Response Body: {resp.text[:200]}")
+            logging.warning(f"Received unexpected status code {status_code}. Response Body: {resp.text[:200]}")
             try:
                  resp.raise_for_status()
             except requests.exceptions.HTTPError as e:
                  raise ApiError(resp) from e
             return resp.text
 
-def make_client(client_id, client_secret, root,
+def make_client(client_id, client_secret, root="https://api.flair.co/",
                 mapper={}, admin=False, default_model=Resource,
                 oauth_version=2, grant_type='client_credentials', scope=None,
                 username=None, password=None, redirect_uri=None, auth_code=None,
-                refresh_token_initial=None, fallback_to_legacy_auth=True):
+                refresh_token_initial=None, fallback_to_legacy_auth=True,
+                user_agent=None):
     """
     Factory function to create and initialize an API client.
 
@@ -622,17 +626,18 @@ def make_client(client_id, client_secret, root,
        redirect_uri=redirect_uri,
        auth_code=auth_code,
        refresh_token_initial=refresh_token_initial,
-       fallback_to_legacy_auth=fallback_to_legacy_auth
+       fallback_to_legacy_auth=fallback_to_legacy_auth,
+       user_agent=user_agent
     )
     try:
         c.authenticate()
     except AuthenticationError as e:
-        print(f"FATAL: Client initialization failed - Could not authenticate.")
+        logging.error(f"FATAL: Client initialization failed - Could not authenticate.")
         raise e
 
     try:
         c.api_root_response()
     except ApiError as e:
-         print(f"Warning: Failed to fetch API root during client initialization: {e}")
+         logging.warning(f"Failed to fetch API root during client initialization: {e}")
 
     return c
