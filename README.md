@@ -8,10 +8,10 @@ This package provides a very simple API client for the [Flair API](https://api.f
 Eventually this will be released on PyPi, for now you'll need to install via github
 
 ```
-pip install git+git://github.com/flair-systems/flair-api-client-py.git
+pip install git+https://github.com/flair-systems/flair-api-client-py.git
 ```
 
-This package depdends on [requests](http://docs.python-requests.org/en/master/), and requires Python 3.5 or greater.
+This package depends on [requests](http://docs.python-requests.org/en/master/), and requires Python 3.5 or greater.
 
 ## Usage
 
@@ -50,22 +50,22 @@ room.delete_rel(vents=vent)
 
 ### Authorization
 
-At the moment, this package only supports authenticating to the Flair API using a client credentials request. This will give access to resources owned by the user to whom the credentials were issued. Support for other OAuth flow will be coming in future releases.
+To authenticate with the Flair API, you'll need to open the Flair App and create or find your OAuth 2.0 credentials in Account Settings (near the bottom under Developer Settings). This package supports authenticating using these client credentials, as well as the original OAuth 1.0 (legacy) credentials, which will provide access to resources granted to that user.
 
 ### Extension
 
-If, instead of having requests initialize or update the default Resource object, you'd like to use your own classes you can initialize the client with a mapper:
+If you want to use custom classes instead of the default `Resource` object, you can initialize the client with a `mapper` dictionary that maps resource types to your custom classes. Custom classes must inherit from `Resource` and call `super().__init__()` with the required parameters.
 
 ```python
 from flair_api import make_client, Resource
 
 class User(Resource):
-    def __init__(*args, **kwargs):
-        self.__super__.init(*args, **kwargs)
-        
+    def __init__(self, client, id_, type_, attributes, relationships):
+        super().__init__(client, id_, type_, attributes, relationships)
+
     def __str__(self):
-        return "User: " + self.attributes['name']
-        
+        return f"User: {self.attributes.get('name', 'Unknown')}"
+
 client = make_client(client_id, client_secret, 'https://api.flair.co/', mapper={'users': User})
 
 users = client.get('users')
@@ -80,6 +80,6 @@ Contributions are welcome by anyone. To get started, [sign the Contributor Licen
 
 ## License
 
-Copyright 2016 by Standard Euler, Inc
+Copyright 2016-2025 by Standard Euler, Inc
 
 Licensed under the [Apache Public License 2.0](http://www.apache.org/licenses/LICENSE-2.0). See LICENSE.

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools >= 61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flair-api-client-py"
+version = "1.1.0"
+description = "Flair API Client"
+readme = "README.md"
+authors = [
+    { name = "Edward Paget", email = "derrick@flair.zone" },
+    { name = "Derrick A.", email = "derrick@flair.zone" },
+]
+urls.Homepage = "https://api.flair.co"
+license = "Apache-2.0"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.5"
+dependencies = [
+    "requests>=2.32.5,<3.0.0",
+]
+[project.optional-dependencies]
+dev = [
+    "requests-mock>=1.12.1,<2.0.0",
+    "pytest>=8.4.2,<9.0.0",
+]
