@@ -1,9 +1,10 @@
 from .client import make_client, Resource, ApiError, \
-    EmptyBodyException
+    EmptyBodyException, AuthenticationError
 
 __all__ = [
     'make_client',
     'Resource',
     'ApiError',
-    'EmptyBodyException'
+    'EmptyBodyException',
+    'AuthenticationError'
 ]

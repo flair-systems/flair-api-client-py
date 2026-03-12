@@ -3,13 +3,15 @@ requires = ["setuptools >= 61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "flair-api-client-py"
-version = "1.1.0"
+name = "flair-client"
+version = "2.0.0"
 description = "Flair API Client"
 readme = "README.md"
 authors = [
-    { name = "Edward Paget", email = "derrick@flair.zone" },
-    { name = "Derrick A.", email = "derrick@flair.zone" },
+    { name = "Edward Paget", email = "ed@flair.co" },
+]
+maintainers = [
+    { name = "Derrick A.", email = "derrick@flair.co" },
 ]
 urls.Homepage = "https://api.flair.co"
 license = "Apache-2.0"
@@ -17,16 +19,13 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-requires-python = ">=3.5"
+requires-python = ">=3.8"
 dependencies = [
     "requests>=2.32.5,<3.0.0",
 ]
@@ -34,4 +33,12 @@ dependencies = [
 dev = [
     "requests-mock>=1.12.1,<2.0.0",
     "pytest>=8.4.2,<9.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "build>=0.10.0",
+    "twine>=4.0.0",
+]
+test = [
+    "requests-mock>=1.12.1,<2.0.0",
+    "pytest>=8.4.2,<9.0.0",
+    "pytest-cov>=5.0.0",
 ]
